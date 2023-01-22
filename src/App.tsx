@@ -1,24 +1,64 @@
-import React from 'react';
-import logo from './logo.svg';
+import { useState } from 'react';
 import './App.css';
+import CopyRight from './components/common/CopyRight';
+import InteractScreen from './components/InteractScreen';
+import MainScreen from './components/MainScreen';
+import ResultScreen from './components/ResultScreen';
+import { Pokemon } from './type/Pokemon';
+import { DataPokemon } from './data/DataPokemon';
+import { shuffled } from './utils/shuffled';
+
+interface Settings {
+  totalPokemon: number;
+  pokemons: Pokemon[];
+  started: number;
+}
 
 function App() {
+  const [settings, setSettings] = useState<Settings>({
+    totalPokemon: 16,
+    pokemons: [],
+    started: 0,
+  });
+  const [status, setStatus] = useState('result');
+  const [timer, setTimer] = useState(0);
+
+  const onStartAgain = () => {
+    setStatus('default');
+  };
+  const handleMatch = (num: number) => {
+    const pokemons1 = DataPokemon.slice(0, num);
+    const pokemons2 = [...pokemons1];
+    const results = shuffled(shuffled(shuffled([...pokemons1, ...pokemons2])));
+
+    const settings = {
+      totalPokemon: num,
+      pokemons: results,
+      started: new Date().getTime(),
+    };
+    setStatus('game');
+    setSettings(settings);
+  };
+
+  const onFinish = () => {
+    setTimer(new Date().getTime() - settings.started);
+    setStatus('result');
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      {status === 'default' && <MainScreen handleMatch={handleMatch} />}
+      {status === 'game' && (
+        <InteractScreen
+          pokemons={settings.pokemons}
+          started={settings.started}
+          onFinish={onFinish}
+        />
+      )}
+      {status === 'result' && (
+        <ResultScreen onStartAgain={onStartAgain} timer={timer} />
+      )}
+      <CopyRight />
     </div>
   );
 }
